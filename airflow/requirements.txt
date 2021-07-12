@@ -1,0 +1,7 @@
+psycopg2-binary
+python-dotenv==0.18.0
+pandas==1.0.1
+pandas-gbq==0.15.0
+pyarrow==2.0.0
+google-auth-oauthlib===0.4.1
+google-cloud-bigquery==2.20.0
