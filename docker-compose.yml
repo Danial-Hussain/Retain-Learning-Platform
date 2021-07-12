@@ -1,0 +1,73 @@
+version: '3'
+
+services:
+    database:
+      container_name: database
+      image: postgres
+      ports:
+          - "5432:5432"
+      env_file:
+          - .env
+      volumes:
+          - ./pgdata:/var/lib/postgresql/data/
+
+    backend:
+      container_name: backend
+      env_file: 
+          - .env
+      build:
+        context: ./retain-backend
+      ports:
+         - "5000:5000"
+      volumes:
+        - ./retain-backend:/flask
+      depends_on: 
+        - database
+
+    frontend:
+      container_name: frontend
+      build:
+        context: ./retain-app
+      ports:
+        - "3000:3000"
+      volumes:
+        - ./retain-app:/react
+      depends_on: 
+        - backend
+
+    postgres:
+      image: postgres:9.6
+      environment:
+        - POSTGRES_USER=airflow
+        - POSTGRES_PASSWORD=airflow
+        - POSTGRES_DB=airflow
+      logging:
+        options:
+          max-size: 10m
+          max-file: "3"
+  
+    webserver:
+      build: ./airflow
+      restart: always
+      env_file: .env
+      depends_on:
+        - postgres
+        - database
+      environment:
+        - LOAD_EX=n
+        - EXECUTOR=Local
+      logging:
+        options:
+          max-size: 10m
+          max-file: "3"
+      volumes:
+        - ./airflow/dags:/usr/local/airflow/dags
+        - ./airflow/plugins:/usr/local/airflow/plugins
+      ports:
+        - "8080:8080"
+      command: webserver
+      healthcheck:
+        test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+        interval: 30s
+        timeout: 30s
+        retries: 3
